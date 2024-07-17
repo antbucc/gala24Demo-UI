@@ -8,10 +8,9 @@ import PromptField from './components/PromptField';
 const App = () => {
   const [studentData, setStudentData] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [adaptations] = useState([
-    'Lower quiz difficulty',
-    'Provide additional resources',
-    'Assign peer tutoring',
+  const [adaptations, setAdaptations] = useState([
+    { time: 't1', type: 'Lower quiz difficulty' },
+    { time: 't2', type: 'Provide additional resources' },
     // Add more adaptations as needed
   ]);
 
@@ -33,6 +32,7 @@ const App = () => {
   const handleSelectAdaptation = (adaptation) => {
     console.log(`Selected Adaptation: ${adaptation}`);
     // Handle the selected adaptation as needed
+    setAdaptations([...adaptations, { time: `t${studentData[0].responses.length + 1}`, type: adaptation }]);
   };
 
   const handleSubmitPrompt = (prompt) => {
@@ -57,7 +57,7 @@ const App = () => {
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Paper sx={{ width: '60%', padding: 2, background: 'background.paper' }}>
-            <PerformanceChart data={studentData} />
+            <PerformanceChart data={studentData} adaptations={adaptations} />
           </Paper>
           <Box sx={{ width: '35%', marginLeft: 2 }}>
             <Paper sx={{ padding: 2, background: 'background.paper', mb: 2 }}>
@@ -88,7 +88,7 @@ const App = () => {
         />
         {filteredStudents.map(student => (
           <Paper key={student.studentID} sx={{ padding: 2, background: 'background.paper', marginBottom: 2 }}>
-            <PerformanceChart data={[student]} />
+            <PerformanceChart data={[student]} adaptations={adaptations} />
           </Paper>
         ))}
       </Container>

@@ -8,77 +8,62 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  Filler,
 } from 'chart.js';
+import annotationPlugin from 'chartjs-plugin-annotation';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+  annotationPlugin
+);
 
-const PerformanceChart = ({ data }) => {
-  const isAggregate = data.length > 1;
-
-  const processStudentData = (student) => {
-    const timeLabels = student.responses.map((_, index) => `t${index + 1}`);
-    const scores = student.responses.map(response => response.correct ? 1 : 0);
-    return { timeLabels, scores };
-  };
-
-  const individualDatasets = data.map(student => {
-    const { timeLabels, scores } = processStudentData(student);
-    return {
-      labels: timeLabels,
-      datasets: [
-        {
-          label: `Scores of ${student.studentID}`,
-          data: scores,
-          borderColor: 'rgba(75, 192, 192, 1)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          fill: true,
-        }
-      ]
-    };
-  });
-
-  // Class performance over time
+const PerformanceChart = ({ data, adaptations }) => {
+  // Aggregate class performance over time
   const timeLabels = [];
-  const correctCounts = [];
-  const incorrectCounts = [];
+  const aggregatedScores = [];
+  const adaptationsAtTime = new Set();
 
   data.forEach(student => {
     student.responses.forEach((response, index) => {
       const time = `t${index + 1}`;
 
-      // Initialize counts if they don't exist
       if (!timeLabels.includes(time)) {
         timeLabels.push(time);
-        correctCounts[timeLabels.indexOf(time)] = 0;
-        incorrectCounts[timeLabels.indexOf(time)] = 0;
+        aggregatedScores[timeLabels.indexOf(time)] = 0;
       }
 
-      // Increment counts
-      if (response.correct) {
-        correctCounts[timeLabels.indexOf(time)] += 1;
-      } else {
-        incorrectCounts[timeLabels.indexOf(time)] += 1;
+      aggregatedScores[timeLabels.indexOf(time)] += response.correct ? 1 : -1;
+
+      const adaptation = adaptations.find(adapt => adapt.time === time);
+      if (adaptation) {
+        adaptationsAtTime.add(time);
       }
     });
   });
 
+  // Predictive projection (simple extrapolation)
+  const projectionCount = timeLabels.length + 1;
+  const lastScore = aggregatedScores[aggregatedScores.length - 1];
+  const projectionScore = lastScore + (lastScore - aggregatedScores[aggregatedScores.length - 2]);
+
   const classData = {
-    labels: timeLabels,
+    labels: [...timeLabels, `t${projectionCount}`],
     datasets: [
       {
-        label: 'Correct Answers',
-        data: correctCounts,
+        label: 'Aggregated Score',
+        data: [...aggregatedScores, projectionScore],
         borderColor: 'rgba(75, 192, 192, 1)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         fill: true,
-      },
-      {
-        label: 'Incorrect Answers',
-        data: incorrectCounts,
-        borderColor: 'rgba(255, 99, 132, 1)',
-        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-        fill: true,
+        borderDash: [5, 5]
       },
     ],
   };
@@ -98,7 +83,7 @@ const PerformanceChart = ({ data }) => {
       },
       title: {
         display: true,
-        text: 'Performance Over Time',
+        text: 'Class Performance Over Time',
         font: {
           size: 20,
           family: '"Press Start 2P", cursive',
@@ -116,6 +101,28 @@ const PerformanceChart = ({ data }) => {
           family: '"Press Start 2P", cursive',
           color: '#ffffff',
         },
+      },
+      annotation: {
+        annotations: Array.from(adaptationsAtTime).map((time) => ({
+          type: 'point',
+          xValue: time,
+          yValue: aggregatedScores[timeLabels.indexOf(time)],
+          backgroundColor: 'yellow',
+          borderColor: 'yellow',
+          borderWidth: 2,
+          radius: 5,
+          label: {
+            enabled: true,
+            content: adaptations.find(adapt => adapt.time === time)?.type,
+            position: 'top',
+            backgroundColor: 'yellow',
+            color: 'black',
+            font: {
+              size: 12,
+              family: '"Press Start 2P", cursive'
+            }
+          }
+        }))
       }
     },
     scales: {
@@ -150,15 +157,7 @@ const PerformanceChart = ({ data }) => {
 
   return (
     <div style={{ padding: '20px', backgroundColor: '#3c4043', borderRadius: '10px' }}>
-      {isAggregate ? (
-        <Line data={classData} options={options} />
-      ) : (
-        individualDatasets.map((studentData, index) => (
-          <div key={index} style={{ marginBottom: '20px' }}>
-            <Line data={studentData} options={{ ...options, title: { display: true, text: `Performance of ${data[index].studentID}` } }} />
-          </div>
-        ))
-      )}
+      <Line data={classData} options={options} />
     </div>
   );
 };
