@@ -1,0 +1,26 @@
+body {
+  background-color: #e3f2fd;
+  font-family: 'Roboto', sans-serif;
+}
+
+header {
+  background-color: #1976d2;
+  color: white;
+}
+
+h4 {
+  font-weight: bold;
+}
+
+h5 {
+  font-weight: bold;
+}
+
+button {
+  background-color: #1976d2;
+  color: white;
+}
+
+button:hover {
+  background-color: #1565c0;
+}
