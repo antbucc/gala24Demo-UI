@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Paper, Divider, TextField } from '@mui/material';
+import { Container, Typography, Box, Paper, Divider, TextField, Tabs, Tab } from '@mui/material';
 import Header from './components/Header';
 import PerformanceChart from './components/PerformanceChart';
+import CorrectIncorrectChart from './components/CorrectIncorrectChart';
 import AdaptationSelector from './components/AdaptationSelector';
 import PromptField from './components/PromptField';
 
@@ -13,6 +14,7 @@ const App = () => {
     { time: 't2', type: 'Provide additional resources' },
     // Add more adaptations as needed
   ]);
+  const [tabIndex, setTabIndex] = useState(0);
 
   useEffect(() => {
     // Fetch student data from the API
@@ -57,7 +59,16 @@ const App = () => {
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Paper sx={{ width: '60%', padding: 2, background: 'background.paper' }}>
-            <PerformanceChart data={studentData} adaptations={adaptations} />
+            <Tabs value={tabIndex} onChange={(e, newValue) => setTabIndex(newValue)}>
+              <Tab label="Aggregated Performance" />
+              <Tab label="Correct/Incorrect Performance" />
+            </Tabs>
+            {tabIndex === 0 && (
+              <PerformanceChart data={studentData} adaptations={adaptations} />
+            )}
+            {tabIndex === 1 && (
+              <CorrectIncorrectChart data={studentData} adaptations={adaptations} />
+            )}
           </Paper>
           <Box sx={{ width: '35%', marginLeft: 2 }}>
             <Paper sx={{ padding: 2, background: 'background.paper', mb: 2 }}>
