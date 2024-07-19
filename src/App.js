@@ -64,19 +64,13 @@ const App = () => {
               <Tab label="Correct/Incorrect Performance" />
             </Tabs>
             {tabIndex === 0 && (
-              <PerformanceChart data={studentData} adaptations={adaptations} />
+              <PerformanceChart data={studentData} adaptations={adaptations} isAggregate={true} />
             )}
             {tabIndex === 1 && (
               <CorrectIncorrectChart data={studentData} adaptations={adaptations} />
             )}
           </Paper>
           <Box sx={{ width: '35%', marginLeft: 2 }}>
-            <Paper sx={{ padding: 2, background: 'background.paper', mb: 2 }}>
-              <Typography variant="h5" component="h3" gutterBottom sx={{ color: 'text.primary' }}>
-                Suggested Adaptations
-              </Typography>
-              <AdaptationSelector adaptations={adaptations} onSelect={handleSelectAdaptation} />
-            </Paper>
             <Paper sx={{ padding: 2, background: 'background.paper' }}>
               <Typography variant="h5" component="h3" gutterBottom sx={{ color: 'text.primary' }}>
                 Not happy? How can I help?
@@ -99,7 +93,10 @@ const App = () => {
         />
         {filteredStudents.map(student => (
           <Paper key={student.studentID} sx={{ padding: 2, background: 'background.paper', marginBottom: 2 }}>
-            <PerformanceChart data={[student]} adaptations={adaptations} />
+            <Typography variant="h6" component="h6" sx={{ color: 'text.primary' }}>
+              {`Student ID: ${student.studentID}`}
+            </Typography>
+            <PerformanceChart data={[student]} adaptations={adaptations} isAggregate={false} />
           </Paper>
         ))}
       </Container>
