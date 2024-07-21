@@ -31,7 +31,7 @@ ChartJS.register(
 const PerformanceChart = ({ data, adaptations, isAggregate }) => {
   const [open, setOpen] = useState(false);
   const [eligibleStudents, setEligibleStudents] = useState([]);
-  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [selectedStudents, setSelectedStudents] = useState({});
   const [currentAdaptation, setCurrentAdaptation] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,18 +51,43 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
 
   const handleSnackbarClose = () => setSnackbarOpen(false);
 
-  const handleStudentSelection = (studentID) => {
-    setSelectedStudents((prev) => 
-      prev.includes(studentID) 
-        ? prev.filter(id => id !== studentID) 
-        : [...prev, studentID]
-    );
+  const handleStudentSelection = (studentID, adaptationType, adaptationValue) => {
+    setSelectedStudents((prev) => ({
+      ...prev,
+      [studentID]: prev[studentID]
+        ? undefined
+        : { adaptationType, adaptationValue },
+    }));
   };
 
-  const applyAdaptations = () => {
-    console.log(`Applying adaptations to students: ${selectedStudents.join(', ')}`);
-    setSnackbarOpen(true);
-    handleClose();
+  const applyAdaptations = async () => {
+    const adaptationsToSave = Object.entries(selectedStudents).map(
+      ([studentID, adaptation]) => ({
+        studentID,
+        ...adaptation,
+      })
+    );
+    const body =  JSON.stringify({ adaptations: adaptationsToSave });
+    try {
+     
+      const response = await fetch('https://gala24demo-api-production.up.railway.app/save-adaptations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: body,
+      });
+
+      if (response.ok) {
+        console.log('Adaptations applied to students:', adaptationsToSave);
+        setSnackbarOpen(true);
+        handleClose();
+      } else {
+        console.error('Error applying adaptations:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error applying adaptations:', error);
+    }
   };
 
   const fetchTopics = async () => {
@@ -278,7 +303,7 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
           boxShadow: 24, 
           p: 4, 
           overflowY: 'auto', 
-          maxHeight: '80vh', // Ensure modal doesn't exceed viewport height
+          maxHeight: '80vh', 
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center'
@@ -320,8 +345,8 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
                     </TableCell>
                     <TableCell>
                       <Checkbox 
-                        checked={selectedStudents.includes(student.studentID)} 
-                        onChange={() => handleStudentSelection(student.studentID)}
+                        checked={selectedStudents[student.studentID] != null} 
+                        onChange={() => handleStudentSelection(student.studentID, student.adaptationType, student.adaptationValue)}
                       />
                     </TableCell>
                   </TableRow>
