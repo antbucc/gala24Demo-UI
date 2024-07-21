@@ -35,6 +35,11 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
   const [currentAdaptation, setCurrentAdaptation] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [topics, setTopics] = useState([]);
+
+  useEffect(() => {
+    fetchTopics();
+  }, []);
 
   const handleOpen = (adaptation) => {
     setCurrentAdaptation(adaptation);
@@ -55,19 +60,59 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
   };
 
   const applyAdaptations = () => {
-    // Handle applying adaptations here
     console.log(`Applying adaptations to students: ${selectedStudents.join(', ')}`);
     setSnackbarOpen(true);
     handleClose();
   };
 
+  const fetchTopics = async () => {
+    try {
+      const response = await fetch('https://gala24demo-api-production.up.railway.app/get-topics?themeName=Plastic');
+      const data = await response.json();
+      const topicsArray = data[0].topics;
+      setTopics(topicsArray);
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+    }
+  };
+
+  const determineAdaptationType = (correctAnswers, currentTopic, student) => {
+    if (correctAnswers > 2) {
+      const bloomLevels = ['Remembering', 'Understanding', 'Applying', 'Analyzing', 'Evaluating', 'Creating'];
+      const currentLevelIndex = bloomLevels.indexOf(student.currentBloomLevel);
+      const nextBloomLevel = bloomLevels[currentLevelIndex + 1] || bloomLevels[bloomLevels.length - 1];
+      return { type: 'increase bloom level', value: nextBloomLevel };
+    } else {
+      let newTopic;
+      do {
+        newTopic = topics[Math.floor(Math.random() * topics.length)];
+      } while (newTopic === currentTopic);
+      return { type: 'change topic', value: newTopic };
+    }
+  };
+
   const fetchEligibleStudents = async () => {
     try {
-      const response = await fetch('https://gala24demo-api-production.up.railway.app/eligible-students');
-      const data = await response.json();
-      setEligibleStudents(data);
+      const eligibleResponse = await fetch('https://gala24demo-api-production.up.railway.app/eligible-students');
+      const eligibleData = await eligibleResponse.json();
+
+      const actionsResponse = await fetch('https://gala24demo-api-production.up.railway.app/student-actions');
+      const actionsData = await actionsResponse.json();
+
+      const studentsWithAdaptations = eligibleData.map(student => {
+        const studentActions = actionsData.find(action => action.studentID === student.studentID);
+        if (studentActions) {
+          const correctAnswers = studentActions.responses.filter(response => response.correct).length;
+          const currentTopic = studentActions.responses[0]?.topicID;
+          const adaptation = determineAdaptationType(correctAnswers, currentTopic, student);
+          return { ...student, adaptationType: adaptation.type, adaptationValue: adaptation.value };
+        }
+        return { ...student, adaptationType: "change topic", adaptationValue: topics[0] };
+      });
+
+      setEligibleStudents(studentsWithAdaptations);
     } catch (error) {
-      console.error('Error fetching eligible students:', error);
+      console.error('Error fetching eligible students or student actions:', error);
     }
   };
 
@@ -97,7 +142,6 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
     });
   });
 
-  // Predictive projection (simple extrapolation)
   const projectionCount = timeLabels.length + 1;
   const lastScore = aggregatedScores[aggregatedScores.length - 1];
   const projectionScore = lastScore + (lastScore - aggregatedScores[aggregatedScores.length - 2]);
@@ -165,7 +209,7 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
           type: 'point',
           xValue: time,
           yValue: aggregatedScores[timeLabels.indexOf(time)],
-          backgroundColor: 'red', // Use red for alert points
+          backgroundColor: 'red',
           borderColor: 'red',
           borderWidth: 2,
           radius: 5,
@@ -227,13 +271,17 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
           top: '50%', 
           left: '50%', 
           transform: 'translate(-50%, -50%)', 
-          width: 500, 
-          maxHeight: '80vh', // Ensure modal doesn't exceed viewport height
+          width: '80%', 
+          maxWidth: 800, 
           bgcolor: 'background.paper', 
           border: '2px solid #000', 
           boxShadow: 24, 
           p: 4, 
-          overflowY: 'auto' // Enable scrolling if content exceeds modal height
+          overflowY: 'auto', 
+          maxHeight: '80vh', // Ensure modal doesn't exceed viewport height
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center'
         }}>
           <Typography id="adaptation-modal-title" variant="h6" component="h2">
             Apply Adaptations
@@ -250,12 +298,13 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
             onChange={(e) => setSearchTerm(e.target.value)}
             sx={{ mb: 2 }}
           />
-          <TableContainer component={Paper}>
+          <TableContainer component={Paper} sx={{ width: '100%' }}>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>Student ID</TableCell>
                   <TableCell>Adaptation Type</TableCell>
+                  <TableCell>Adaptation Value</TableCell>
                   <TableCell>Select</TableCell>
                 </TableRow>
               </TableHead>
@@ -263,8 +312,11 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
                 {filteredStudents.map(student => (
                   <TableRow key={student.studentID}>
                     <TableCell>{student.studentID}</TableCell>
+                    <TableCell>{student.adaptationType}</TableCell>
                     <TableCell>
-                      { 'New Learning Objective'}
+                      {typeof student.adaptationValue === 'string' 
+                        ? student.adaptationValue 
+                        : student.adaptationValue} 
                     </TableCell>
                     <TableCell>
                       <Checkbox 
