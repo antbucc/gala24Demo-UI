@@ -203,7 +203,7 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
         labels: {
           font: {
             size: 14,
-            family: '"Press Start 2P", cursive',
+            family: 'Arial', // Changed font family to Arial
             color: '#ffffff',
           }
         }
@@ -213,19 +213,19 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
         text: 'Class Performance Over Time',
         font: {
           size: 20,
-          family: '"Press Start 2P", cursive',
+          family: 'Arial', // Changed font family to Arial
           color: '#ffffff',
         }
       },
       tooltip: {
         titleFont: {
           size: 16,
-          family: '"Press Start 2P", cursive',
+          family: 'Arial', // Changed font family to Arial
           color: '#ffffff',
         },
         bodyFont: {
           size: 14,
-          family: '"Press Start 2P", cursive',
+          family: 'Arial', // Changed font family to Arial
           color: '#ffffff',
         },
       },
@@ -246,7 +246,7 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
             color: 'white',
             font: {
               size: 12,
-              family: '"Press Start 2P", cursive'
+              family: 'Arial', // Changed font family to Arial
             }
           }
         }))
@@ -257,7 +257,7 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
         ticks: {
           font: {
             size: 12,
-            family: '"Press Start 2P", cursive',
+            family: 'Arial', // Changed font family to Arial
             color: '#ffffff',
           },
         },
@@ -266,7 +266,7 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
         ticks: {
           font: {
             size: 12,
-            family: '"Press Start 2P", cursive',
+            family: 'Arial', // Changed font family to Arial
             color: '#ffffff',
           },
         },
