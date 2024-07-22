@@ -61,20 +61,21 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
   };
 
   const applyAdaptations = async () => {
+    const adaptationsToSave = Object.entries(selectedStudents).map(
+      ([studentID, adaptation]) => ({
+        studentID,
+        ...adaptation,
+      })
+    );
+    const body =  JSON.stringify({ adaptations: adaptationsToSave });
     try {
-      const adaptationsToSave = Object.entries(selectedStudents).map(
-        ([studentID, adaptation]) => ({
-          studentID,
-          ...adaptation,
-        })
-      );
-
+     
       const response = await fetch('https://gala24demo-api-production.up.railway.app/save-adaptations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ adaptations: adaptationsToSave }),
+        body: body,
       });
 
       if (response.ok) {
@@ -147,7 +148,6 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
   const timeLabels = [];
   const aggregatedScores = [];
   const adaptationsAtTime = new Set();
-  const individualAnnotations = [];
 
   data.forEach(student => {
     student.responses.forEach((response, index) => {
@@ -163,26 +163,6 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
       const adaptation = adaptations.find(adapt => adapt.time === time);
       if (adaptation) {
         adaptationsAtTime.add(time);
-        individualAnnotations.push({
-          type: 'point',
-          xValue: time,
-          yValue: response.correct ? aggregatedScores[timeLabels.indexOf(time)] : aggregatedScores[timeLabels.indexOf(time)] - 1,
-          backgroundColor: 'blue',
-          borderColor: 'blue',
-          borderWidth: 1,
-          radius: 5,
-          label: {
-            enabled: true,
-            content: 'A',
-            position: 'top',
-            backgroundColor: 'blue',
-            color: 'white',
-            font: {
-              size: 12,
-              family: '"Press Start 2P", cursive'
-            }
-          }
-        });
       }
     });
   });
@@ -250,29 +230,26 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
         },
       },
       annotation: {
-        annotations: [
-          ...Array.from(adaptationsAtTime).map((time) => ({
-            type: 'point',
-            xValue: time,
-            yValue: aggregatedScores[timeLabels.indexOf(time)],
+        annotations: Array.from(adaptationsAtTime).map((time) => ({
+          type: 'point',
+          xValue: time,
+          yValue: aggregatedScores[timeLabels.indexOf(time)],
+          backgroundColor: 'red',
+          borderColor: 'red',
+          borderWidth: 2,
+          radius: 5,
+          label: {
+            enabled: true,
+            content: adaptations.find(adapt => adapt.time === time)?.type,
+            position: 'top',
             backgroundColor: 'red',
-            borderColor: 'red',
-            borderWidth: 2,
-            radius: 5,
-            label: {
-              enabled: true,
-              content: 'A',
-              position: 'top',
-              backgroundColor: 'red',
-              color: 'white',
-              font: {
-                size: 12,
-                family: '"Press Start 2P", cursive'
-              }
+            color: 'white',
+            font: {
+              size: 12,
+              family: '"Press Start 2P", cursive'
             }
-          })),
-          ...individualAnnotations
-        ]
+          }
+        }))
       }
     },
     scales: {
