@@ -5,6 +5,7 @@ import PerformanceChart from './components/PerformanceChart';
 import CorrectIncorrectChart from './components/CorrectIncorrectChart';
 import AdaptationSelector from './components/AdaptationSelector';
 import PromptField from './components/PromptField';
+import RadarChart from './components/RadarChart';
 
 const App = () => {
   const [studentData, setStudentData] = useState([]);
@@ -62,12 +63,16 @@ const App = () => {
             <Tabs value={tabIndex} onChange={(e, newValue) => setTabIndex(newValue)}>
               <Tab label="Aggregated Performance" />
               <Tab label="Correct/Incorrect Performance" />
+              <Tab label="Radar Chart" />
             </Tabs>
             {tabIndex === 0 && (
               <PerformanceChart data={studentData} adaptations={adaptations} isAggregate={true} />
             )}
             {tabIndex === 1 && (
               <CorrectIncorrectChart data={studentData} adaptations={adaptations} />
+            )}
+            {tabIndex === 2 && (
+              <RadarChart />
             )}
           </Paper>
           <Box sx={{ width: '35%', marginLeft: 2 }}>
