@@ -150,7 +150,8 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
   const adaptationsAtTime = new Set();
 
   data.forEach(student => {
-    student.responses.forEach((response, index) => {
+    console.log("QUIZ PER UTENTE: "+student.responses.length);
+       student.responses.forEach((response, index) => {
       const time = `t${index + 1}`;
 
       if (!timeLabels.includes(time)) {
@@ -210,7 +211,7 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
       },
       title: {
         display: true,
-        text: 'Class Performance Over Time',
+        text: 'Performance Over Time',
         font: {
           size: 20,
           family: 'Arial', // Changed font family to Arial

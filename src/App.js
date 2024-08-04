@@ -3,9 +3,32 @@ import { Container, Typography, Box, Paper, Divider, TextField, Tabs, Tab } from
 import Header from './components/Header';
 import PerformanceChart from './components/PerformanceChart';
 import CorrectIncorrectChart from './components/CorrectIncorrectChart';
-import AdaptationSelector from './components/AdaptationSelector';
 import PromptField from './components/PromptField';
 import RadarChart from './components/RadarChart';
+
+
+const data = [
+  {"studentID": "student1", "skills": [1.87, 0.98, 0.5]},
+  {"studentID": "student2", "skills": [0.32, 0.31, 0.2]},
+  {"studentID": "student3", "skills": [2.44, 1.55, 0.3]},
+  {"studentID": "student4", "skills": [3.79, 2.33, 0.4]},
+  {"studentID": "student5", "skills": [3.67, 0.13, 0.1]},
+  {"studentID": "student6", "skills": [4.82, 1.65, 0.2]},
+  {"studentID": "student7", "skills": [3.12, 2.57, 0.5]},
+  {"studentID": "student8", "skills": [1.14, 1.79, 0.3]},
+  {"studentID": "student9", "skills": [2.17, 1.39, 0.4]},
+  {"studentID": "student10", "skills": [2.83, 4.19, 0.2]},
+  {"studentID": "student11", "skills": [3.89, 3.77, 0.4]},
+  {"studentID": "student12", "skills": [1.43, 4.16, 0.3]},
+  {"studentID": "student13", "skills": [0.49, 0.86, 0.2]},
+  {"studentID": "student14", "skills": [3.53, 1.76, 0.1]},
+  {"studentID": "student15", "skills": [4.83, 1.22, 0.2]},
+  {"studentID": "student16", "skills": [1.12, 4.24, 0.1]},
+  {"studentID": "student17", "skills": [2.87, 2.48, 0.3]},
+  {"studentID": "student18", "skills": [2.22, 0.77, 0.4]},
+  {"studentID": "student19", "skills": [2.66, 3.59, 0.2]},
+  {"studentID": "student20", "skills": [2.99, 0.18, 0.3]}
+];
 
 const App = () => {
   const [studentData, setStudentData] = useState([]);
@@ -21,7 +44,7 @@ const App = () => {
     // Fetch student data from the API
     const fetchData = async () => {
       try {
-        const response = await fetch('https://gala24demo-api-production.up.railway.app/student-actions'); // Update this URL to your actual endpoint
+        const response = await fetch('https://gala24demo-api-production.up.railway.app/student-actions'); 
         const data = await response.json();
         setStudentData(data);
       } catch (error) {
@@ -59,11 +82,11 @@ const App = () => {
           Class Performance
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Paper sx={{ width: '60%', padding: 2, background: 'background.paper' }}>
+          <Paper sx={{ width: '100%', padding: 2, background: 'background.paper' }}>
             <Tabs value={tabIndex} onChange={(e, newValue) => setTabIndex(newValue)}>
               <Tab label="Aggregated Performance" />
               <Tab label="Correct/Incorrect Performance" />
-              <Tab label="Radar Chart" />
+              <Tab label="Skills Performance" />
             </Tabs>
             {tabIndex === 0 && (
               <PerformanceChart data={studentData} adaptations={adaptations} isAggregate={true} />
@@ -72,17 +95,12 @@ const App = () => {
               <CorrectIncorrectChart data={studentData} adaptations={adaptations} />
             )}
             {tabIndex === 2 && (
-              <RadarChart />
+             <RadarChart data={data} />
             )}
           </Paper>
-          <Box sx={{ width: '35%', marginLeft: 2 }}>
-            <Paper sx={{ padding: 2, background: 'background.paper' }}>
-              <Typography variant="h5" component="h3" gutterBottom sx={{ color: 'text.primary' }}>
-                Not happy? How can I help?
-              </Typography>
-              <PromptField onSubmit={handleSubmitPrompt} />
-            </Paper>
-          </Box>
+      
+         
+         
         </Box>
         <Divider sx={{ marginY: 4, backgroundColor: 'text.secondary' }} />
         <Typography variant="h6" component="h4" sx={{ color: 'text.primary' }}>
