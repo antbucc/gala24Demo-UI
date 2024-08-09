@@ -42,6 +42,7 @@ const App = () => {
 
   useEffect(() => {
     // Fetch student data from the API
+    trainModel();
     const fetchData = async () => {
       try {
         const response = await fetch('https://gala24demo-api-production.up.railway.app/student-actions'); 
@@ -60,6 +61,30 @@ const App = () => {
     // Handle the selected adaptation as needed
     setAdaptations([...adaptations, { time: `t${studentData[0].responses.length + 1}`, type: adaptation }]);
   };
+
+
+  const trainModel = async () => {
+    console.log("Starting to train the model");
+    try {
+        const response = await fetch('http://gala24-cogdiagnosis-production.up.railway.app/train', {
+            method: 'GET',
+            mode: 'cors', // Ensure CORS requests are sent with credentials
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Model training successful:', data);
+        } else {
+            console.error('Model training failed:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error during model training:', error);
+    }
+};
+
 
   const handleSubmitPrompt = (prompt) => {
     console.log(`Teacher Request: ${prompt}`);
