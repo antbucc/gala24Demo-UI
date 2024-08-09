@@ -66,7 +66,7 @@ const App = () => {
   const trainModel = async () => {
     console.log("Starting to train the model");
     try {
-        const response = await fetch('http://gala24-cogdiagnosis-production.up.railway.app/train', {
+        const response = await fetch('https://gala24-cogdiagnosis-production.up.railway.app/train', {
             method: 'GET',
             mode: 'cors', // Ensure CORS requests are sent with credentials
             headers: {
