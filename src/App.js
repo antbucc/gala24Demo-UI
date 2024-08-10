@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Paper, Divider, TextField, Tabs, Tab } from '@mui/material';
+import { Container, Typography, Box, Paper, Tabs, Tab } from '@mui/material';
 import Header from './components/Header';
 import PerformanceChart from './components/PerformanceChart';
 import CorrectIncorrectChart from './components/CorrectIncorrectChart';
-import PromptField from './components/PromptField';
 import RadarChart from './components/RadarChart';
 
 const App = () => {
   const [studentData, setStudentData] = useState([]);
   const [diagnoseData, setDiagnoseData] = useState([]); // State to hold diagnose data
-  const [searchTerm, setSearchTerm] = useState('');
-  const [adaptations, setAdaptations] = useState([
-    { time: 't1', type: 'Lower quiz difficulty' },
-    { time: 't2', type: 'Provide additional resources' },
+  //const [adaptations, setAdaptations] = useState([
+   // { time: 't1', type: 'Lower quiz difficulty' },
+   // { time: 't2', type: 'Provide additional resources' },
     // Add more adaptations as needed
-  ]);
+ // ]);
   const [tabIndex, setTabIndex] = useState(0);
 
   useEffect(() => {
@@ -42,11 +40,11 @@ const App = () => {
   
   }, []); // Dependency array is still empty to run only once on component mount
   
-  const handleSelectAdaptation = (adaptation) => {
-    console.log(`Selected Adaptation: ${adaptation}`);
+  //const handleSelectAdaptation = (adaptation) => {
+   // console.log(`Selected Adaptation: ${adaptation}`);
     // Handle the selected adaptation as needed
-    setAdaptations([...adaptations, { time: `t${studentData[0].responses.length + 1}`, type: adaptation }]);
-  };
+   // setAdaptations([...adaptations, { time: `t${studentData[0].responses.length + 1}`, type: adaptation }]);
+ // };
 
 
   const trainModel = async () => {
@@ -84,14 +82,6 @@ const App = () => {
       }
     };
 
-  const handleSubmitPrompt = (prompt) => {
-    console.log(`Teacher Request: ${prompt}`);
-    // Handle the prompt submission as needed
-  };
-
-  const filteredStudents = studentData.filter(student =>
-    student.studentID.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   if (studentData.length === 0) {
     return <Typography variant="h4" component="h2" gutterBottom sx={{ color: 'text.primary' }}>Loading...</Typography>;
@@ -115,10 +105,10 @@ const App = () => {
                 <RadarChart data={diagnoseData} />
             )}
             {tabIndex === 1 && (
-              <CorrectIncorrectChart data={studentData} adaptations={adaptations} />
+              <CorrectIncorrectChart data={studentData}  />
             )}
             {tabIndex === 2 && (
-             <PerformanceChart data={studentData} adaptations={adaptations} isAggregate={true} />
+             <PerformanceChart data={studentData}  isAggregate={true} />
             )}
           </Paper>
         </Box>

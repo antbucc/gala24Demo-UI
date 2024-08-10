@@ -25,11 +25,11 @@ ChartJS.register(
   annotationPlugin
 );
 
-const CorrectIncorrectChart = ({ data, adaptations }) => {
+const CorrectIncorrectChart = ({ data }) => {
   const timeLabels = [];
   const correctCounts = [];
   const incorrectCounts = [];
-  const adaptationsAtTime = new Set();
+
 
   data.forEach(student => {
     student.responses.forEach((response, index) => {
@@ -47,10 +47,6 @@ const CorrectIncorrectChart = ({ data, adaptations }) => {
         incorrectCounts[timeLabels.indexOf(time)] += 1;
       }
 
-      const adaptation = adaptations.find(adapt => adapt.time === time);
-      if (adaptation) {
-        adaptationsAtTime.add(time);
-      }
     });
   });
 
@@ -108,28 +104,7 @@ const CorrectIncorrectChart = ({ data, adaptations }) => {
           color: '#ffffff',
         },
       },
-      annotation: {
-        annotations: Array.from(adaptationsAtTime).map((time) => ({
-          type: 'point',
-          xValue: time,
-          yValue: Math.max(correctCounts[timeLabels.indexOf(time)], incorrectCounts[timeLabels.indexOf(time)]),
-          backgroundColor: 'yellow',
-          borderColor: 'yellow',
-          borderWidth: 2,
-          radius: 5,
-          label: {
-            enabled: true,
-            content: adaptations.find(adapt => adapt.time === time)?.type,
-            position: 'top',
-            backgroundColor: 'yellow',
-            color: 'black',
-            font: {
-              size: 12,
-              family: '"Press Start 2P", cursive'
-            }
-          }
-        }))
-      }
+     
     },
     scales: {
       x: {

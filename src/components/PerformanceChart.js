@@ -28,11 +28,11 @@ ChartJS.register(
   annotationPlugin
 );
 
-const PerformanceChart = ({ data, adaptations, isAggregate }) => {
+const PerformanceChart = ({ data, isAggregate }) => {
   const [open, setOpen] = useState(false);
   const [eligibleStudents, setEligibleStudents] = useState([]);
   const [selectedStudents, setSelectedStudents] = useState({});
-  const [currentAdaptation, setCurrentAdaptation] = useState(null);
+
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [topics, setTopics] = useState([]);
@@ -42,7 +42,6 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
   }, []);
 
   const handleOpen = (adaptation) => {
-    setCurrentAdaptation(adaptation);
     fetchEligibleStudents();
     setOpen(true);
   };
@@ -163,10 +162,7 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
 
       aggregatedScores[timeLabels.indexOf(time)] += response.correct ? 1 : -1;
 
-      const adaptation = adaptations.find(adapt => adapt.time === time);
-      if (adaptation) {
-        adaptationsAtTime.add(time);
-      }
+      
     });
   });
 
@@ -195,9 +191,6 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
         const element = elements[0];
         const index = element.index;
         const time = classData.labels[index];
-        if (adaptationsAtTime.has(time)) {
-          handleOpen(adaptations.find(adapt => adapt.time === time));
-        }
       }
     },
     plugins: {
@@ -232,28 +225,7 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
           color: '#ffffff',
         },
       },
-      annotation: {
-        annotations: Array.from(adaptationsAtTime).map((time) => ({
-          type: 'point',
-          xValue: time,
-          yValue: aggregatedScores[timeLabels.indexOf(time)],
-          backgroundColor: 'red',
-          borderColor: 'red',
-          borderWidth: 2,
-          radius: 5,
-          label: {
-            enabled: true,
-            content: adaptations.find(adapt => adapt.time === time)?.type,
-            position: 'top',
-            backgroundColor: 'red',
-            color: 'white',
-            font: {
-              size: 12,
-              family: 'Arial', // Changed font family to Arial
-            }
-          }
-        }))
-      }
+     
     },
     scales: {
       x: {
