@@ -116,6 +116,8 @@ const PerformanceChart = ({ data, adaptations, isAggregate }) => {
     }
   };
 
+  
+
   const fetchEligibleStudents = async () => {
     try {
       const eligibleResponse = await fetch('https://gala24demo-api-production.up.railway.app/eligible-students');
