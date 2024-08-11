@@ -4,84 +4,87 @@ import Header from './components/Header';
 import PerformanceChart from './components/PerformanceChart';
 import CorrectIncorrectChart from './components/CorrectIncorrectChart';
 import RadarChart from './components/RadarChart';
+import axios from 'axios';
+
+
 
 const App = () => {
   const [studentData, setStudentData] = useState([]);
   const [diagnoseData, setDiagnoseData] = useState([]); // State to hold diagnose data
-  //const [adaptations, setAdaptations] = useState([
-   // { time: 't1', type: 'Lower quiz difficulty' },
-   // { time: 't2', type: 'Provide additional resources' },
-    // Add more adaptations as needed
- // ]);
   const [tabIndex, setTabIndex] = useState(0);
 
   useEffect(() => {
+
     // Fetch student data from the API
     const fetchData = async () => {
       try {
-        const response = await fetch('https://gala24demo-api-production.up.railway.app/student-actions'); 
+        const response = await fetch('https://gala24demo-api-production.up.railway.app/student-actions');
         const data = await response.json();
         setStudentData(data);
-  
+
         // Extract studentIDs and pass them to fetchDiagnoseData
         const studentIDs = data.map(student => student.studentID);
-        const diagnoseData = await fetchDiagnoseData({ studentID: studentIDs });
-        setDiagnoseData(diagnoseData); // Set the fetched diagnose data
+
+        // First, train the model using cognitive service
+        await trainModel(); // Assuming trainModel returns a Promise
+
+        // Second, extract the diagnosis from the Cognitive services using the studentIDs
+        const diagnoseResult = await Diagnose(studentIDs); // Assuming Diagnose is the function to get diagnose data
+        console.log("RESULT OF DIAGNOSE: "+diagnoseResult);
       } catch (error) {
         console.error('Error fetching student data:', error);
       }
     };
-  
-    // fetch data for the student actions
+
+    // Fetch data for the student actions
     fetchData();
-    
-    // train the model
-    trainModel();
-  
+
   }, []); // Dependency array is still empty to run only once on component mount
-  
-  //const handleSelectAdaptation = (adaptation) => {
-   // console.log(`Selected Adaptation: ${adaptation}`);
-    // Handle the selected adaptation as needed
-   // setAdaptations([...adaptations, { time: `t${studentData[0].responses.length + 1}`, type: adaptation }]);
- // };
 
 
   const trainModel = async () => {
+    // Backend for the Cognitive Services
+    const apiClient = axios.create({
+      baseURL: 'https://gala24demo-api-production.up.railway.app',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    const response = await fetch('/train');
-        if (response.ok) {
-            console.log("Model training successful");
-        } else {
-            console.error('Model training failed:', response.statusText);
-        }
-    };
+    const response = await apiClient.get('/train');
+    console.log("RESPONSE: " + response + "Model trained");
+
+  };
 
 
-    const fetchDiagnoseData = async (students) => {
-      
-      console.log("STUDENTS: "+JSON.stringify(students));
-      try {
-        const response = await fetch('/diagnose', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(students),
-        });
-    
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-    
-        const data = await response.json();
-        console.log("Diagnose Data:", data);
-        return data;
-      } catch (error) {
-        console.error('Error fetching diagnose data:', error);
+  const Diagnose = async (studentIDs) => {
+    // Backend for the Cognitive Services
+    const apiClient = axios.create({
+      baseURL: 'https://gala24demo-api-production.up.railway.app/',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  
+    try {
+      // Call the POST API /diagnose with the provided student IDs
+      const response = await apiClient.post('/diagnose', { studentID: studentIDs });
+      console.log("RESPONSE DIAGNOSE: ", response.data);
+      console.log("Diagnose completed successfully.");
+      setDiagnoseData(response.data);
+    } catch (error) {
+      if (error.response) {
+        console.error('Server responded with a status other than 2xx:', error.response.statusText);
+        console.error('Status Code:', error.response.status);
+        console.error('Response Data:', error.response.data);
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+        console.error('Request details:', error.config);
+      } else {
+        console.error('Error setting up request:', error.message);
       }
-    };
-
+    }
+  };
 
   if (studentData.length === 0) {
     return <Typography variant="h4" component="h2" gutterBottom sx={{ color: 'text.primary' }}>Loading...</Typography>;
@@ -97,18 +100,18 @@ const App = () => {
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Paper sx={{ width: '100%', padding: 2, background: 'background.paper' }}>
             <Tabs value={tabIndex} onChange={(e, newValue) => setTabIndex(newValue)}>
-            <Tab label="Skills Performance" />
+              <Tab label="Skills Performance" />
               <Tab label="Correct/Incorrect Performance" />
               <Tab label="Aggregated Performance" />
             </Tabs>
             {tabIndex === 0 && (
-                <RadarChart data={diagnoseData} />
+              <RadarChart data={diagnoseData} />
             )}
             {tabIndex === 1 && (
-              <CorrectIncorrectChart data={studentData}  />
+              <CorrectIncorrectChart data={studentData} />
             )}
             {tabIndex === 2 && (
-             <PerformanceChart data={studentData}  isAggregate={true} />
+              <PerformanceChart data={studentData} isAggregate={true} />
             )}
           </Paper>
         </Box>
