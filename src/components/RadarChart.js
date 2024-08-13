@@ -9,7 +9,9 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Paper, Typography, Button, Box } from '@mui/material';
+import { Paper, Typography, Button, Box, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton } from '@mui/material';
+import { Add, Remove } from '@mui/icons-material';
+import axios from 'axios';
 
 // Register the necessary components
 ChartJS.register(
@@ -40,7 +42,9 @@ const skillLabelsMapping = {
 };
 
 const RadarChart = ({ data }) => {
-  const [selectedStudents, setSelectedStudents] = useState([]); // State to track selected student IDs
+  const [selectedStudents, setSelectedStudents] = useState([]);
+  const [openPopup, setOpenPopup] = useState(false);
+  const [popupData, setPopupData] = useState(null);
 
   if (!data || data.length === 0) {
     return <Typography variant="h6" component="h6" sx={{ color: 'text.primary' }}>No data available</Typography>;
@@ -83,7 +87,6 @@ const RadarChart = ({ data }) => {
     datasets: datasets,
   };
 
-  // Chart options to enhance the appearance
   const chartOptions = {
     scales: {
       r: {
@@ -104,7 +107,7 @@ const RadarChart = ({ data }) => {
         pointLabels: {
           color: '#000', // Color of the skill labels (axes labels)
           font: {
-            size: 14, // Font size for skill labels
+            size: 12, // Font size for skill labels
             weight: 'bold', // Font weight for skill labels
           },
         },
@@ -116,18 +119,18 @@ const RadarChart = ({ data }) => {
         labels: {
           color: '#333', // Color of the legend labels
           font: {
-            size: 14, // Font size for legend labels
+            size: 12, // Font size for legend labels
           },
         },
       },
       tooltip: {
         backgroundColor: 'rgba(0, 0, 0, 0.7)', // Background color of the tooltip
         titleFont: {
-          size: 14, // Font size for tooltip title
+          size: 12, // Font size for tooltip title
           weight: 'bold', // Font weight for tooltip title
         },
         bodyFont: {
-          size: 12, // Font size for tooltip body
+          size: 10, // Font size for tooltip body
         },
         footerFont: {
           size: 10, // Font size for tooltip footer
@@ -142,6 +145,182 @@ const RadarChart = ({ data }) => {
         },
       },
     },
+    onClick: async (event, elements) => {
+      console.log("Number of elements clicked:", elements.length);
+    
+      if (elements.length > 0) {
+        const studentsWithSkills = [];
+    
+        elements.forEach(element => {
+          const dataset = datasets[element.datasetIndex];
+          const index = element.index;
+          const studentID = dataset.label;
+          const skill = skillLabels[index];
+          const skillCode = Object.keys(skillLabelsMapping).find(code => skillLabelsMapping[code] === skill);
+    
+          // Find or create an entry for this student
+          let studentEntry = studentsWithSkills.find(entry => entry.studentID === studentID);
+    
+          if (!studentEntry) {
+            studentEntry = { studentID, skills: [] };
+            studentsWithSkills.push(studentEntry);
+          }
+    
+          // Add the skill to the student's skill list
+          studentEntry.skills.push(skillCode);
+        });
+    
+        console.log("Students with skills for API request:", studentsWithSkills);
+    
+        try {
+          const recommendationsMap = await fetchRecommendedDifficulty(studentsWithSkills);
+
+    
+          const studentsWithRecommendations = studentsWithSkills.map(({ studentID, skills }) => {
+            return skills.map(skillCode => {
+              const actualValue = datasets.find(ds => ds.label === studentID).data[skillLabels.indexOf(skillLabelsMapping[skillCode])];
+              let recommendedDifficulty = recommendationsMap[`${studentID}-${skillCode}`];
+
+              console.log("DIFFICOLTA RACCOMANDATA: "+recommendedDifficulty);
+    
+              if (typeof recommendedDifficulty === 'number') {
+                recommendedDifficulty = parseFloat(recommendedDifficulty.toFixed(2));
+              } else {
+                recommendedDifficulty = 'N/A';
+              }
+    
+              return {
+                studentID,
+                actualValue,
+                adjustedValue: actualValue,
+                recommendedDifficulty,
+              };
+            });
+          }).flat();
+    
+          setPopupData({
+            skill: skillLabels[elements[0].index], // Assuming all indices correspond to the same skill
+            studentsWithRecommendations
+          });
+          setOpenPopup(true);
+        } catch (error) {
+          console.error("Error fetching or processing recommendations:", error);
+        }
+      } else {
+        console.log("No elements were clicked.");
+      }
+    },
+    
+    
+  };
+
+ // Function to fetch the recommended difficulty for the next exercise for a given student and skill
+const fetchRecommendedDifficulty = async (studentsWithSkills) => {
+  const apiEndpoint = 'https://gala24-cogdiagnosis-production.up.railway.app/recommend';
+  const threshold = 0.5; // Example threshold value, you can adjust or pass dynamically
+
+  // Ensure that studentsWithSkills is an array and contains valid data
+  if (!Array.isArray(studentsWithSkills) || studentsWithSkills.length === 0) {
+    console.error("Invalid studentsWithSkills input:", studentsWithSkills);
+    return {};
+  }
+
+  // Prepare the payload for the API
+  const payload = [];
+
+  studentsWithSkills.forEach(({ studentID, skills }) => {
+    skills.forEach(skill => {
+      payload.push({
+        studentID,
+        skill,
+        threshold
+      });
+    });
+  });
+
+  try {
+    console.log("Payload for recommendation API:", JSON.stringify(payload, null, 2));
+
+    // Send the payload as a POST request to the API
+    const response = await axios.post(apiEndpoint, payload, {
+      headers: {
+        'Content-Type': 'application/json', // Ensure the request content type is JSON
+      }
+    });
+
+    const recommendations = response.data;
+    console.log("ECCCCC: "+recommendations);
+
+   // console.log("Received recommendations:", JSON.stringify(recommendations, null, 2));
+
+    // Map the recommendations to easily access by studentID and skill
+    const recommendationsMap = recommendations.reduce((acc, rec) => {
+      const key = `${rec.studentID}-${rec.skill}`;
+      acc[key] = rec.recommendations[0].difficulty; // Assume we take the first recommendation
+      return acc;
+    }, {});
+
+    return recommendationsMap;
+  } catch (error) {
+    if (error.response) {
+      // The server responded with a status code out of the 2xx range
+      console.error("Server responded with an error:", error.response.status);
+      console.error("Response data:", error.response.data);
+    } else if (error.request) {
+      // The request was made, but no response was received
+      console.error("No response received:", error.request);
+    } else {
+      // Something else caused the error
+      console.error("Error setting up the request:", error.message);
+    }
+    return {}; // Return an empty object on error
+  }
+};
+
+
+
+
+  // Handle closing the popup
+  const handleClose = () => {
+    setOpenPopup(false);
+    setPopupData(null);
+  };
+
+  // Handle applying the changes
+  const handleApply = () => {
+    // Logic to apply the changes, such as updating the backend or state
+    console.log('Applied changes:', popupData.studentsWithRecommendations);
+    setOpenPopup(false);
+    setPopupData(null);
+  };
+
+  // Handle adjusting the value for a skill
+  const handleAdjustValue = (studentID, adjustment) => {
+    setPopupData(prevData => ({
+      ...prevData,
+      studentsWithRecommendations: prevData.studentsWithRecommendations.map(student =>
+        student.studentID === studentID
+          ? { ...student, adjustedValue: student.adjustedValue + adjustment }
+          : student
+      ),
+    }));
+  };
+
+  // Handle adjusting the recommended difficulty
+  const handleAdjustDifficulty = (studentID, adjustment) => {
+    setPopupData(prevData => ({
+      ...prevData,
+      studentsWithRecommendations: prevData.studentsWithRecommendations.map(student =>
+        student.studentID === studentID
+          ? { 
+              ...student, 
+              recommendedDifficulty: typeof student.recommendedDifficulty === 'number' 
+                ? parseFloat((student.recommendedDifficulty + adjustment).toFixed(2)) 
+                : student.recommendedDifficulty
+            }
+          : student
+      ),
+    }));
   };
 
   return (
@@ -163,6 +342,65 @@ const RadarChart = ({ data }) => {
         ))}
       </Box>
       <Radar data={chartData} options={chartOptions} />
+      
+      <Modal
+        open={openPopup}
+        onClose={handleClose}
+        closeAfterTransition
+        BackdropComponent={Backdrop}
+        BackdropProps={{
+          timeout: 500,
+        }}
+      >
+        <Fade in={openPopup}>
+          <Paper sx={{ padding: 2, margin: 'auto', width: '90%', height: '90%', overflow: 'auto' }}>
+            {popupData && (
+              <>
+                <Typography variant="h6" component="h6" sx={{ marginBottom: 2, fontSize: '1rem' }}>
+                  Adaptations for Skill: {popupData.skill}
+                </Typography>
+                <TableContainer sx={{ maxHeight: '70vh', overflow: 'auto' }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontSize: '0.875rem' }}>Student ID</TableCell>
+                        <TableCell align="right" sx={{ fontSize: '0.875rem' }}>Current Value</TableCell>
+                        <TableCell align="right" sx={{ fontSize: '0.875rem' }}>Recommended Difficulty</TableCell>
+                        <TableCell align="center" sx={{ fontSize: '0.875rem' }}>Adjust Difficulty</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {popupData.studentsWithRecommendations.map((student, index) => (
+                        <TableRow key={index}>
+                          <TableCell sx={{ fontSize: '0.875rem' }}>{student.studentID}</TableCell>
+                          <TableCell align="right" sx={{ fontSize: '0.875rem' }}>{student.actualValue}</TableCell>
+                          <TableCell align="right" sx={{ fontSize: '0.875rem' }}>{student.recommendedDifficulty}</TableCell>
+                          <TableCell align="center">
+                            <IconButton onClick={() => handleAdjustDifficulty(student.studentID, -0.1)} size="small">
+                              <Remove />
+                            </IconButton>
+                            <IconButton onClick={() => handleAdjustDifficulty(student.studentID, 0.1)} size="small">
+                              <Add />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2, gap: 2 }}>
+                  <Button variant="contained" color="primary" onClick={handleApply} sx={{ fontSize: '0.875rem' }}>
+                    Apply
+                  </Button>
+                  <Button variant="outlined" color="secondary" onClick={handleClose} sx={{ fontSize: '0.875rem' }}>
+                    Close
+                  </Button>
+                </Box>
+              </>
+            )}
+          </Paper>
+        </Fade>
+      </Modal>
     </Paper>
   );
 };
