@@ -195,12 +195,12 @@ const RadarChart = ({ data }) => {
         studentID: student.studentID,
         idealDifficulty: student.idealValue,
       }));
-
-      // Make an API call to save the updated data
+  
+      // Make an API call to save the updated data (array of difficulties)
       await saveUpdatedData(updatedData);
-
+  
       console.log('Applied changes and saved to DB:', updatedData);
-
+  
       // Optionally, update the UI or state after saving
       setOpenPopup(false);
       setPopupData(null);
@@ -208,26 +208,18 @@ const RadarChart = ({ data }) => {
       console.error('Error saving data:', error);
     }
   };
-
-  const saveUpdatedData = async (updatedData) => {
-
-    console.log("DATI DA SALVARE: "+JSON.stringify(updatedData));
+  
+  // Function to save the updated data to the backend
+  const saveUpdatedData = async (difficultiesArray) => {
     try {
-      const apiClient = axios.create({
-        baseURL: 'https://gala24demo-api-production.up.railway.app', // Replace with your actual API endpoint
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const response = await apiClient.post('/save-difficulties', updatedData); // Adjust the endpoint as needed
-      return response.data;
+      const response = await axios.post('/save-difficulties', { difficulties: difficultiesArray });
+      console.log('Save response:', response.data);
     } catch (error) {
-      console.error('Error in saveUpdatedData:', error);
-      throw error;
+      console.error('Error in saving difficulties:', error);
+      throw error; // Re-throw the error to be handled by handleApply
     }
-      
   };
+  
 
   const handleClose = () => {
     setOpenPopup(false);
