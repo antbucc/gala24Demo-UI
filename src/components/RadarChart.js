@@ -47,7 +47,7 @@ const RadarChart = ({ data }) => {
   const [popupData, setPopupData] = useState(null);
 
   if (!data || data.length === 0) {
-    return <Typography variant="h6" component="h6" sx={{ color: '#fff' }}>No data available</Typography>;
+    return <Typography variant="h6" component="h6" sx={{ color: '#ddd' }}>No data available</Typography>;
   }
 
   // Handle student ID click to toggle selection
@@ -76,8 +76,8 @@ const RadarChart = ({ data }) => {
       backgroundColor: `${color}33`, // 20% opacity for background color
       borderColor: color,
       pointBackgroundColor: color,
-      pointBorderColor: '#fff',
-      pointHoverBackgroundColor: '#fff',
+      pointBorderColor: '#ddd',
+      pointHoverBackgroundColor: '#ddd',
       pointHoverBorderColor: color,
     };
   });
@@ -91,14 +91,14 @@ const RadarChart = ({ data }) => {
     scales: {
       r: {
         angleLines: {
-          color: '#ccc', // Light grey for the angle lines (spokes)
+          color: '#888', // Medium grey for the angle lines (spokes)
         },
         grid: {
-          color: '#ddd', // Light grey for the grid lines
+          color: '#777', // Darker grey for the grid lines
         },
         ticks: {
-          backdropColor: 'rgba(0, 0, 0, 0.85)', // Dark background for tick labels to blend with black background
-          color: '#fff', // White color for the tick labels
+          backdropColor: 'rgba(0, 0, 0, 0.7)', // Dark background for tick labels
+          color: '#ddd', // Light grey color for the tick labels
           showLabelBackdrop: true, // Show backdrop for tick labels
           font: {
             size: 14, // Larger font size for tick labels
@@ -106,7 +106,7 @@ const RadarChart = ({ data }) => {
           },
         },
         pointLabels: {
-          color: '#fff', // White color for the skill labels (axes labels)
+          color: '#ddd', // Light grey color for the skill labels (axes labels)
           font: {
             size: 14, // Larger font size for skill labels
             weight: 'bold', // Bold font weight for skill labels
@@ -118,7 +118,7 @@ const RadarChart = ({ data }) => {
       legend: {
         position: 'top', // Position of the legend (top, bottom, left, right)
         labels: {
-          color: '#fff', // White color for the legend labels
+          color: '#ddd', // Light grey color for the legend labels
           font: {
             size: 14, // Larger font size for legend labels
             weight: 'bold', // Bold font weight for legend labels
@@ -126,19 +126,19 @@ const RadarChart = ({ data }) => {
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)', // Light background color for the tooltip
+        backgroundColor: 'rgba(50, 50, 50, 0.9)', // Darker background color for the tooltip
         titleFont: {
           size: 14, // Larger font size for tooltip title
           weight: 'bold', // Bold font weight for tooltip title
-          color: '#000', // Dark text color for the tooltip title
+          color: '#fff', // White text color for the tooltip title
         },
         bodyFont: {
           size: 12, // Slightly larger font size for tooltip body
-          color: '#000', // Dark text color for the tooltip body
+          color: '#fff', // White text color for the tooltip body
         },
         footerFont: {
           size: 12, // Slightly larger font size for tooltip footer
-          color: '#000', // Dark text color for the tooltip footer
+          color: '#fff', // White text color for the tooltip footer
         },
         callbacks: {
           labelColor: function (tooltipItem) {
@@ -199,50 +199,59 @@ const RadarChart = ({ data }) => {
     },
   };
 
-  // Function to fetch the recommended difficulty for the next exercise for a given student and skill
   const fetchRecommendedDifficulty = async (studentsWithSkills) => {
-    const apiEndpoint = 'https://gala24-cogdiagnosis-production.up.railway.app/recommend';
+    // Backend for the Cognitive Services
+    const apiClient = axios.create({
+      baseURL: 'https://gala24demo-api-production.up.railway.app/',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
     const threshold = 0.5; // Example threshold value, you can adjust or pass dynamically
+
+    // Validate input
     if (!Array.isArray(studentsWithSkills) || studentsWithSkills.length === 0) {
       console.error("Invalid studentsWithSkills input:", studentsWithSkills);
       return {};
     }
-    const payload = [];
-    studentsWithSkills.forEach(({ studentID, skills }) => {
-      skills.forEach(skill => {
-        payload.push({
-          studentID,
-          skill,
-          threshold
-        });
-      });
-    });
+
+    // Prepare the payload as an array of objects
+    const payload = studentsWithSkills.flatMap(({ studentID, skills }) =>
+      skills.map(skill => ({
+        studentID,
+        skill,
+        threshold,
+      }))
+    );
 
     try {
-      const response = await axios.post(apiEndpoint, payload, {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
+      // Send `payload` directly as an array
+      const response = await apiClient.post('/recommend', payload);
+      console.log("RESPONSE RECOMMEND: ", response.data);
+      console.log("RECOMMEND completed successfully.");
 
-      const recommendations = response.data;
-      const recommendationsMap = recommendations.reduce((acc, rec) => {
+      // Build a recommendations map: { "studentID-skill": recommendedDifficulty }
+      const recommendationsMap = response.data.reduce((acc, rec) => {
         const key = `${rec.studentID}-${rec.skill}`;
-        acc[key] = rec.recommendations[0].difficulty;
+        acc[key] = rec.recommendations[0].difficulty; // Assuming we take the first recommendation
         return acc;
       }, {});
 
-      return recommendationsMap;
+      return recommendationsMap; // Return the map for further processing
+
     } catch (error) {
       if (error.response) {
-        console.error("Server responded with an error:", error.response.status);
-        console.error("Response data:", error.response.data);
+        console.error('Server responded with a status other than 2xx:', error.response.statusText);
+        console.error('Status Code:', error.response.status);
+        console.error('Response Data:', error.response.data);
       } else if (error.request) {
-        console.error("No response received:", error.request);
+        console.error('No response received:', error.request);
+        console.error('Request details:', error.config);
       } else {
-        console.error("Error setting up the request:", error.message);
+        console.error('Error setting up request:', error.message);
       }
-      return {};
+      return {}; // Return an empty object in case of error
     }
   };
 
@@ -274,8 +283,8 @@ const RadarChart = ({ data }) => {
   };
 
   return (
-    <Paper sx={{ padding: 2, marginBottom: 2, backgroundColor: '#000' }}>
-      <Typography variant="h6" component="h6" sx={{ color: '#fff', marginBottom: 2 }}>
+    <Paper sx={{ padding: 2, marginBottom: 2, backgroundColor: '#111' }}>
+      <Typography variant="h6" component="h6" sx={{ color: '#ddd', marginBottom: 2 }}>
         Skills Performance
       </Typography>
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, marginBottom: 2 }}>
@@ -285,7 +294,7 @@ const RadarChart = ({ data }) => {
             variant={selectedStudents.includes(student.studentID) ? 'contained' : 'outlined'}
             color="primary"
             onClick={() => handleStudentClick(student.studentID)}
-            sx={{ textTransform: 'none', color: '#fff', borderColor: '#fff' }}
+            sx={{ textTransform: 'none', color: '#ddd', borderColor: '#ddd' }}
           >
             {student.studentID}
           </Button>
@@ -306,30 +315,30 @@ const RadarChart = ({ data }) => {
           <Paper sx={{ padding: 2, margin: 'auto', width: '90%', height: '90%', overflow: 'auto', backgroundColor: '#222' }}>
             {popupData && (
               <>
-                <Typography variant="h6" component="h6" sx={{ marginBottom: 2, fontSize: '1rem', color: '#fff' }}>
+                <Typography variant="h6" component="h6" sx={{ marginBottom: 2, fontSize: '1rem', color: '#ddd' }}>
                   Adaptations for Skill: {popupData.skill}
                 </Typography>
                 <TableContainer sx={{ maxHeight: '70vh', overflow: 'auto' }}>
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontSize: '0.875rem', color: '#fff' }}>Student ID</TableCell>
-                        <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#fff' }}>Current Value</TableCell>
-                        <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#fff' }}>Recommended Difficulty</TableCell>
-                        <TableCell align="center" sx={{ fontSize: '0.875rem', color: '#fff' }}>Adjust Difficulty</TableCell>
+                        <TableCell sx={{ fontSize: '0.875rem', color: '#ddd' }}>Student ID</TableCell>
+                        <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>Current Value</TableCell>
+                        <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>Recommended Difficulty</TableCell>
+                        <TableCell align="center" sx={{ fontSize: '0.875rem', color: '#ddd' }}>Adjust Difficulty</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {popupData.studentsWithRecommendations.map((student, index) => (
                         <TableRow key={index}>
-                          <TableCell sx={{ fontSize: '0.875rem', color: '#fff' }}>{student.studentID}</TableCell>
-                          <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#fff' }}>{student.actualValue}</TableCell>
-                          <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#fff' }}>{student.recommendedDifficulty}</TableCell>
+                          <TableCell sx={{ fontSize: '0.875rem', color: '#ddd' }}>{student.studentID}</TableCell>
+                          <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>{student.actualValue}</TableCell>
+                          <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>{student.recommendedDifficulty}</TableCell>
                           <TableCell align="center">
-                            <IconButton onClick={() => handleAdjustDifficulty(student.studentID, -0.1)} size="small" sx={{ color: '#fff' }}>
+                            <IconButton onClick={() => handleAdjustDifficulty(student.studentID, -0.1)} size="small" sx={{ color: '#ddd' }}>
                               <Remove />
                             </IconButton>
-                            <IconButton onClick={() => handleAdjustDifficulty(student.studentID, 0.1)} size="small" sx={{ color: '#fff' }}>
+                            <IconButton onClick={() => handleAdjustDifficulty(student.studentID, 0.1)} size="small" sx={{ color: '#ddd' }}>
                               <Add />
                             </IconButton>
                           </TableCell>
@@ -342,7 +351,7 @@ const RadarChart = ({ data }) => {
                   <Button variant="contained" color="primary" onClick={handleApply} sx={{ fontSize: '0.875rem' }}>
                     Apply
                   </Button>
-                  <Button variant="outlined" color="secondary" onClick={handleClose} sx={{ fontSize: '0.875rem', color: '#fff', borderColor: '#fff' }}>
+                  <Button variant="outlined" color="secondary" onClick={handleClose} sx={{ fontSize: '0.875rem', color: '#ddd', borderColor: '#ddd' }}>
                     Close
                   </Button>
                 </Box>
