@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Radar } from 'react-chartjs-2';
 import {
@@ -88,6 +89,7 @@ const RadarChart = ({ data }) => {
   };
 
   const chartOptions = {
+    maintainAspectRatio: false,
     scales: {
       r: {
         angleLines: {
@@ -300,7 +302,9 @@ const RadarChart = ({ data }) => {
           </Button>
         ))}
       </Box>
-      <Radar data={chartData} options={chartOptions} />
+      <Box sx={{ height: 600, width: 600, margin: '0 auto' }}>
+        <Radar data={chartData} options={chartOptions} />
+      </Box>
 
       <Modal
         open={openPopup}
