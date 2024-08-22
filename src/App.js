@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Typography, Box, Paper, Tabs, Tab } from '@mui/material';
+import { Container, Typography, Box, Paper, Tabs, Tab, CircularProgress } from '@mui/material';
 import Header from './components/Header';
 import PerformanceChart from './components/PerformanceChart';
 import CorrectIncorrectChart from './components/CorrectIncorrectChart';
 import RadarChart from './components/RadarChart';
 import axios from 'axios';
 
-
-
 const App = () => {
   const [studentData, setStudentData] = useState([]);
   const [diagnoseData, setDiagnoseData] = useState([]); // State to hold diagnose data
+  const [loadingDiagnose, setLoadingDiagnose] = useState(true); // Initialize loading to true
   //const [recommendData, setRecommendData]=  useState([]); // State to hold recommendation data
   const [tabIndex, setTabIndex] = useState(0);
 
@@ -29,14 +28,21 @@ const App = () => {
         // First, train the model using cognitive service
         await trainModel(); // Assuming trainModel returns a Promise
 
+        // No need to set loading to true here, it's already true
+
         // Second, extract the diagnosis from the Cognitive services using the studentIDs
         const diagnoseResult = await Diagnose(studentIDs); // Assuming Diagnose is the function to get diagnose data
-        console.log("RESULT OF DIAGNOSE: "+diagnoseResult);
+        console.log("RESULT OF DIAGNOSE: " + diagnoseResult);
+
+        // Set loading to false after fetching diagnose data
+        setLoadingDiagnose(false);
 
         // Third, recommend the difficulty and the quiz for the students
         //  const recommendResult = await Recommend(studentIDs); 
       } catch (error) {
         console.error('Error fetching student data:', error);
+        // Set loading to false if there's an error
+        setLoadingDiagnose(false);
       }
     };
 
@@ -44,7 +50,6 @@ const App = () => {
     fetchData();
 
   }, []); // Dependency array is still empty to run only once on component mount
-
 
   const trainModel = async () => {
     // Backend for the Cognitive Services
@@ -60,7 +65,6 @@ const App = () => {
 
   };
 
-
   const Diagnose = async (studentIDs) => {
     // Backend for the Cognitive Services
     const apiClient = axios.create({
@@ -69,7 +73,7 @@ const App = () => {
         'Content-Type': 'application/json',
       },
     });
-  
+
     try {
       // Call the POST API /diagnose with the provided student IDs
       const response = await apiClient.post('/diagnose', { studentID: studentIDs });
@@ -90,38 +94,6 @@ const App = () => {
     }
   };
 
-  /*
-
-  const Recommend = async (recommendationData) => {
-    // Backend for the Cognitive Services
-    const apiClient = axios.create({
-      baseURL: 'https://gala24demo-api-production.up.railway.app/',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  
-    try {
-      // Call the POST API /recommend with the provided recommendation data
-      const response = await apiClient.post('/recommend', recommendationData);
-      console.log("RESPONSE RECOMMEND: ", response.data);
-      console.log("Recommendations completed successfully.");
-      setRecommendData(response.data); // Assuming setRecommendData is a state setter for the recommendations data
-    } catch (error) {
-      if (error.response) {
-        console.error('Server responded with a status other than 2xx:', error.response.statusText);
-        console.error('Status Code:', error.response.status);
-        console.error('Response Data:', error.response.data);
-      } else if (error.request) {
-        console.error('No response received:', error.request);
-        console.error('Request details:', error.config);
-      } else {
-        console.error('Error setting up request:', error.message);
-      }
-    }
-  };
-  */
-
   if (studentData.length === 0) {
     return <Typography variant="h4" component="h2" gutterBottom sx={{ color: 'text.primary' }}>Loading...</Typography>;
   }
@@ -141,7 +113,13 @@ const App = () => {
               <Tab label="Aggregated Performance" />
             </Tabs>
             {tabIndex === 0 && (
-              <RadarChart data={diagnoseData} />
+              loadingDiagnose ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <RadarChart data={diagnoseData} />
+              )
             )}
             {tabIndex === 1 && (
               <CorrectIncorrectChart data={studentData} />

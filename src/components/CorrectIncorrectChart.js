@@ -30,7 +30,6 @@ const CorrectIncorrectChart = ({ data }) => {
   const correctCounts = [];
   const incorrectCounts = [];
 
-
   data.forEach(student => {
     student.responses.forEach((response, index) => {
       const time = `t${index + 1}`;
@@ -46,7 +45,6 @@ const CorrectIncorrectChart = ({ data }) => {
       } else {
         incorrectCounts[timeLabels.indexOf(time)] += 1;
       }
-
     });
   });
 
@@ -79,7 +77,7 @@ const CorrectIncorrectChart = ({ data }) => {
           font: {
             size: 14,
             family: '"Press Start 2P", cursive',
-            color: '#ffffff',
+            color: '#ffffff', // White text for visibility
           }
         }
       },
@@ -89,22 +87,22 @@ const CorrectIncorrectChart = ({ data }) => {
         font: {
           size: 20,
           family: '"Press Start 2P", cursive',
-          color: '#ffffff',
+          color: '#ffffff', // White title text
         }
       },
       tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)', // Darker background for tooltips
         titleFont: {
           size: 16,
           family: '"Press Start 2P", cursive',
-          color: '#ffffff',
+          color: '#ffffff', // White tooltip title text
         },
         bodyFont: {
           size: 14,
           family: '"Press Start 2P", cursive',
-          color: '#ffffff',
+          color: '#ffffff', // White tooltip body text
         },
       },
-     
     },
     scales: {
       x: {
@@ -112,7 +110,7 @@ const CorrectIncorrectChart = ({ data }) => {
           font: {
             size: 12,
             family: '"Press Start 2P", cursive',
-            color: '#ffffff',
+            color: '#ffffff', // White tick labels for x-axis
           },
         },
       },
@@ -121,7 +119,7 @@ const CorrectIncorrectChart = ({ data }) => {
           font: {
             size: 12,
             family: '"Press Start 2P", cursive',
-            color: '#ffffff',
+            color: '#ffffff', // White tick labels for y-axis
           },
         },
       },
@@ -137,7 +135,7 @@ const CorrectIncorrectChart = ({ data }) => {
   };
 
   return (
-    <div style={{ padding: '20px', backgroundColor: '#3c4043', borderRadius: '10px' }}>
+    <div style={{ padding: '20px', backgroundColor: '#000', borderRadius: '10px' }}>
       <Line data={chartData} options={options} />
     </div>
   );

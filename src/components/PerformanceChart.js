@@ -66,9 +66,8 @@ const PerformanceChart = ({ data, isAggregate }) => {
         ...adaptation,
       })
     );
-    const body =  JSON.stringify({ adaptations: adaptationsToSave });
+    const body = JSON.stringify({ adaptations: adaptationsToSave });
     try {
-     
       const response = await fetch('https://gala24demo-api-production.up.railway.app/save-adaptations', {
         method: 'POST',
         headers: {
@@ -115,8 +114,6 @@ const PerformanceChart = ({ data, isAggregate }) => {
     }
   };
 
-  
-
   const fetchEligibleStudents = async () => {
     try {
       const eligibleResponse = await fetch('https://gala24demo-api-production.up.railway.app/eligible-students');
@@ -148,11 +145,9 @@ const PerformanceChart = ({ data, isAggregate }) => {
 
   const timeLabels = [];
   const aggregatedScores = [];
-  const adaptationsAtTime = new Set();
 
   data.forEach(student => {
-    console.log("QUIZ PER UTENTE: "+student.responses.length);
-       student.responses.forEach((response, index) => {
+    student.responses.forEach((response, index) => {
       const time = `t${index + 1}`;
 
       if (!timeLabels.includes(time)) {
@@ -161,8 +156,6 @@ const PerformanceChart = ({ data, isAggregate }) => {
       }
 
       aggregatedScores[timeLabels.indexOf(time)] += response.correct ? 1 : -1;
-
-      
     });
   });
 
@@ -179,7 +172,7 @@ const PerformanceChart = ({ data, isAggregate }) => {
         borderColor: 'rgba(75, 192, 192, 1)',
         backgroundColor: 'rgba(75, 192, 192, 0.2)',
         fill: true,
-        borderDash: [5, 5]
+        borderDash: [5, 5],
       },
     ],
   };
@@ -191,6 +184,7 @@ const PerformanceChart = ({ data, isAggregate }) => {
         const element = elements[0];
         const index = element.index;
         const time = classData.labels[index];
+        // Handle click events as needed
       }
     },
     plugins: {
@@ -200,9 +194,9 @@ const PerformanceChart = ({ data, isAggregate }) => {
           font: {
             size: 14,
             family: 'Arial', // Changed font family to Arial
-            color: '#ffffff',
-          }
-        }
+            color: '#ffffff', // White text for visibility
+          },
+        },
       },
       title: {
         display: true,
@@ -210,22 +204,22 @@ const PerformanceChart = ({ data, isAggregate }) => {
         font: {
           size: 20,
           family: 'Arial', // Changed font family to Arial
-          color: '#ffffff',
-        }
+          color: '#ffffff', // White title text
+        },
       },
       tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)', // Darker background for tooltips
         titleFont: {
           size: 16,
           family: 'Arial', // Changed font family to Arial
-          color: '#ffffff',
+          color: '#ffffff', // White tooltip title text
         },
         bodyFont: {
           size: 14,
           family: 'Arial', // Changed font family to Arial
-          color: '#ffffff',
+          color: '#ffffff', // White tooltip body text
         },
       },
-     
     },
     scales: {
       x: {
@@ -233,7 +227,7 @@ const PerformanceChart = ({ data, isAggregate }) => {
           font: {
             size: 12,
             family: 'Arial', // Changed font family to Arial
-            color: '#ffffff',
+            color: '#ffffff', // White tick labels for x-axis
           },
         },
       },
@@ -242,7 +236,7 @@ const PerformanceChart = ({ data, isAggregate }) => {
           font: {
             size: 12,
             family: 'Arial', // Changed font family to Arial
-            color: '#ffffff',
+            color: '#ffffff', // White tick labels for y-axis
           },
         },
       },
@@ -258,7 +252,7 @@ const PerformanceChart = ({ data, isAggregate }) => {
   };
 
   return (
-    <div style={{ padding: '20px', backgroundColor: '#3c4043', borderRadius: '10px' }}>
+    <div style={{ padding: '20px', backgroundColor: '#000', borderRadius: '10px' }}>
       <Line data={classData} options={options} />
       <Modal
         open={open}
@@ -266,27 +260,28 @@ const PerformanceChart = ({ data, isAggregate }) => {
         aria-labelledby="adaptation-modal-title"
         aria-describedby="adaptation-modal-description"
       >
-        <Box sx={{ 
-          position: 'absolute', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)', 
-          width: '80%', 
-          maxWidth: 800, 
-          bgcolor: 'background.paper', 
-          border: '2px solid #000', 
-          boxShadow: 24, 
-          p: 4, 
-          overflowY: 'auto', 
-          maxHeight: '80vh', 
+        <Box sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: '80%',
+          maxWidth: 800,
+          bgcolor: '#333', // Darker background color for the modal
+          border: '2px solid #000',
+          boxShadow: 24,
+          p: 4,
+          overflowY: 'auto',
+          maxHeight: '80vh',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center'
+          alignItems: 'center',
+          color: '#fff', // White text inside the modal
         }}>
-          <Typography id="adaptation-modal-title" variant="h6" component="h2">
+          <Typography id="adaptation-modal-title" variant="h6" component="h2" sx={{ color: '#fff' }}>
             Apply Adaptations
           </Typography>
-          <Typography id="adaptation-modal-description" sx={{ mt: 2, mb: 2 }}>
+          <Typography id="adaptation-modal-description" sx={{ mt: 2, mb: 2, color: '#ccc' }}>
             Select students and apply adaptations.
           </Typography>
           <TextField
@@ -296,32 +291,45 @@ const PerformanceChart = ({ data, isAggregate }) => {
             margin="dense"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{ mb: 2 }}
+            sx={{
+              mb: 2,
+              input: { color: '#fff' }, // White text in the input field
+              label: { color: '#aaa' }, // Grey color for the label
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': {
+                  borderColor: '#777', // Border color for the input field
+                },
+                '&:hover fieldset': {
+                  borderColor: '#fff', // Border color on hover
+                },
+              },
+            }}
           />
-          <TableContainer component={Paper} sx={{ width: '100%' }}>
+          <TableContainer component={Paper} sx={{ width: '100%', bgcolor: '#444' }}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Student ID</TableCell>
-                  <TableCell>Adaptation Type</TableCell>
-                  <TableCell>Adaptation Value</TableCell>
-                  <TableCell>Select</TableCell>
+                  <TableCell sx={{ color: '#fff' }}>Student ID</TableCell>
+                  <TableCell sx={{ color: '#fff' }}>Adaptation Type</TableCell>
+                  <TableCell sx={{ color: '#fff' }}>Adaptation Value</TableCell>
+                  <TableCell sx={{ color: '#fff' }}>Select</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredStudents.map(student => (
                   <TableRow key={student.studentID}>
-                    <TableCell>{student.studentID}</TableCell>
-                    <TableCell>{student.adaptationType}</TableCell>
-                    <TableCell>
-                      {typeof student.adaptationValue === 'string' 
-                        ? student.adaptationValue 
-                        : student.adaptationValue} 
+                    <TableCell sx={{ color: '#fff' }}>{student.studentID}</TableCell>
+                    <TableCell sx={{ color: '#fff' }}>{student.adaptationType}</TableCell>
+                    <TableCell sx={{ color: '#fff' }}>
+                      {typeof student.adaptationValue === 'string'
+                        ? student.adaptationValue
+                        : student.adaptationValue}
                     </TableCell>
                     <TableCell>
-                      <Checkbox 
-                        checked={selectedStudents[student.studentID] != null} 
+                      <Checkbox
+                        checked={selectedStudents[student.studentID] != null}
                         onChange={() => handleStudentSelection(student.studentID, student.adaptationType, student.adaptationValue)}
+                        sx={{ color: '#fff' }} // White checkbox
                       />
                     </TableCell>
                   </TableRow>
@@ -329,9 +337,9 @@ const PerformanceChart = ({ data, isAggregate }) => {
               </TableBody>
             </Table>
           </TableContainer>
-          <Button 
-            variant="contained" 
-            color="primary" 
+          <Button
+            variant="contained"
+            color="primary"
             onClick={applyAdaptations}
             fullWidth
             sx={{ mt: 2 }}
@@ -340,9 +348,9 @@ const PerformanceChart = ({ data, isAggregate }) => {
           </Button>
         </Box>
       </Modal>
-      <Snackbar 
-        open={snackbarOpen} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
         onClose={handleSnackbarClose}
       >
         <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
