@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Radar } from 'react-chartjs-2';
 import {
@@ -152,7 +151,7 @@ const RadarChart = ({ data }) => {
         },
       },
     },
-    onClick: async (event, elements) => {
+    onClick: (event, elements) => {
       if (elements.length > 0) {
         const studentsWithSkills = [];
         elements.forEach(element => {
@@ -169,92 +168,65 @@ const RadarChart = ({ data }) => {
           studentEntry.skills.push(skillCode);
         });
 
-        try {
-          const recommendationsMap = await fetchRecommendedDifficulty(studentsWithSkills);
-          const studentsWithRecommendations = studentsWithSkills.map(({ studentID, skills }) => {
-            return skills.map(skillCode => {
-              const actualValue = datasets.find(ds => ds.label === studentID).data[skillLabels.indexOf(skillLabelsMapping[skillCode])];
-              let recommendedDifficulty = recommendationsMap[`${studentID}-${skillCode}`];
-              if (typeof recommendedDifficulty === 'number') {
-                recommendedDifficulty = parseFloat(recommendedDifficulty.toFixed(2));
-              } else {
-                recommendedDifficulty = 'N/A';
-              }
-              return {
-                studentID,
-                actualValue,
-                adjustedValue: actualValue,
-                recommendedDifficulty,
-              };
-            });
-          }).flat();
-
-          setPopupData({
-            skill: skillLabels[elements[0].index],
-            studentsWithRecommendations
+        const studentsWithDiagnose = studentsWithSkills.map(({ studentID, skills }) => {
+          return skills.map(skillCode => {
+            const diagnoseValue = datasets.find(ds => ds.label === studentID).data[skillLabels.indexOf(skillLabelsMapping[skillCode])];
+            return {
+              studentID,
+              diagnoseValue,
+              idealValue: 1 - diagnoseValue,
+            };
           });
-          setOpenPopup(true);
-        } catch (error) {
-          console.error("Error fetching or processing recommendations:", error);
-        }
+        }).flat();
+
+        setPopupData({
+          skill: skillLabels[elements[0].index],
+          studentsWithDiagnose
+        });
+        setOpenPopup(true);
       }
     },
   };
 
-  const fetchRecommendedDifficulty = async (studentsWithSkills) => {
-    // Backend for the Cognitive Services
-    const apiClient = axios.create({
-      baseURL: 'https://gala24demo-api-production.up.railway.app/',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const threshold = 0.5; // Example threshold value, you can adjust or pass dynamically
-
-    // Validate input
-    if (!Array.isArray(studentsWithSkills) || studentsWithSkills.length === 0) {
-      console.error("Invalid studentsWithSkills input:", studentsWithSkills);
-      return {};
-    }
-
-    // Prepare the payload as an array of objects
-    const payload = studentsWithSkills.flatMap(({ studentID, skills }) =>
-      skills.map(skill => ({
-        studentID,
-        skill,
-        threshold,
-      }))
-    );
-
+  const handleApply = async () => {
     try {
-      // Send `payload` directly as an array
-      const response = await apiClient.post('/recommend', payload);
-      console.log("RESPONSE RECOMMEND: ", response.data);
-      console.log("RECOMMEND completed successfully.");
+      // Collect the updated data to be sent to the API
+      const updatedData = popupData.studentsWithDiagnose.map(student => ({
+        studentID: student.studentID,
+        idealDifficulty: student.idealValue,
+      }));
 
-      // Build a recommendations map: { "studentID-skill": recommendedDifficulty }
-      const recommendationsMap = response.data.reduce((acc, rec) => {
-        const key = `${rec.studentID}-${rec.skill}`;
-        acc[key] = rec.recommendations[0].difficulty; // Assuming we take the first recommendation
-        return acc;
-      }, {});
+      // Make an API call to save the updated data
+      await saveUpdatedData(updatedData);
 
-      return recommendationsMap; // Return the map for further processing
+      console.log('Applied changes and saved to DB:', updatedData);
 
+      // Optionally, update the UI or state after saving
+      setOpenPopup(false);
+      setPopupData(null);
     } catch (error) {
-      if (error.response) {
-        console.error('Server responded with a status other than 2xx:', error.response.statusText);
-        console.error('Status Code:', error.response.status);
-        console.error('Response Data:', error.response.data);
-      } else if (error.request) {
-        console.error('No response received:', error.request);
-        console.error('Request details:', error.config);
-      } else {
-        console.error('Error setting up request:', error.message);
-      }
-      return {}; // Return an empty object in case of error
+      console.error('Error saving data:', error);
     }
+  };
+
+  const saveUpdatedData = async (updatedData) => {
+
+    console.log("DATI DA SALVARE: "+JSON.stringify(updatedData));
+    try {
+      const apiClient = axios.create({
+        baseURL: 'https://gala24demo-api-production.up.railway.app', // Replace with your actual API endpoint
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const response = await apiClient.post('/save-difficulties', updatedData); // Adjust the endpoint as needed
+      return response.data;
+    } catch (error) {
+      console.error('Error in saveUpdatedData:', error);
+      throw error;
+    }
+      
   };
 
   const handleClose = () => {
@@ -262,22 +234,16 @@ const RadarChart = ({ data }) => {
     setPopupData(null);
   };
 
-  const handleApply = () => {
-    console.log('Applied changes:', popupData.studentsWithRecommendations);
-    setOpenPopup(false);
-    setPopupData(null);
-  };
-
   const handleAdjustDifficulty = (studentID, adjustment) => {
     setPopupData(prevData => ({
       ...prevData,
-      studentsWithRecommendations: prevData.studentsWithRecommendations.map(student =>
+      studentsWithDiagnose: prevData.studentsWithDiagnose.map(student =>
         student.studentID === studentID
           ? {
             ...student,
-            recommendedDifficulty: typeof student.recommendedDifficulty === 'number'
-              ? parseFloat((student.recommendedDifficulty + adjustment).toFixed(2))
-              : student.recommendedDifficulty
+            idealValue: typeof student.idealValue === 'number'
+              ? parseFloat((student.idealValue + adjustment).toFixed(2))
+              : student.idealValue
           }
           : student
       ),
@@ -328,21 +294,21 @@ const RadarChart = ({ data }) => {
                       <TableRow>
                         <TableCell sx={{ fontSize: '0.875rem', color: '#ddd' }}>Student ID</TableCell>
                         <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>Current Value</TableCell>
-                        <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>Recommended Difficulty</TableCell>
+                        <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>Ideal Difficulty</TableCell>
                         <TableCell align="center" sx={{ fontSize: '0.875rem', color: '#ddd' }}>Adjust Difficulty</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {popupData.studentsWithRecommendations.map((student, index) => (
+                      {popupData.studentsWithDiagnose.map((student, index) => (
                         <TableRow key={index}>
                           <TableCell sx={{ fontSize: '0.875rem', color: '#ddd' }}>{student.studentID}</TableCell>
-                          <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>{student.actualValue}</TableCell>
-                          <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>{student.recommendedDifficulty}</TableCell>
+                          <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>{student.diagnoseValue.toFixed(2)}</TableCell>
+                          <TableCell align="right" sx={{ fontSize: '0.875rem', color: '#ddd' }}>{student.idealValue.toFixed(2)}</TableCell>
                           <TableCell align="center">
-                            <IconButton onClick={() => handleAdjustDifficulty(student.studentID, -0.1)} size="small" sx={{ color: '#ddd' }}>
+                            <IconButton onClick={() => handleAdjustDifficulty(student.studentID, -0.01)} size="small" sx={{ color: '#ddd' }}>
                               <Remove />
                             </IconButton>
-                            <IconButton onClick={() => handleAdjustDifficulty(student.studentID, 0.1)} size="small" sx={{ color: '#ddd' }}>
+                            <IconButton onClick={() => handleAdjustDifficulty(student.studentID, 0.01)} size="small" sx={{ color: '#ddd' }}>
                               <Add />
                             </IconButton>
                           </TableCell>
