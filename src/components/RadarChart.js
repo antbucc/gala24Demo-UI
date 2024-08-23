@@ -9,7 +9,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Paper, Typography, Button, Box, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton } from '@mui/material';
+import { Paper, Typography, Button, Box, Modal, Backdrop, Fade, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Snackbar, Alert } from '@mui/material';
 import { Add, Remove } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -45,6 +45,8 @@ const RadarChart = ({ data }) => {
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [openPopup, setOpenPopup] = useState(false);
   const [popupData, setPopupData] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   if (!data || data.length === 0) {
     return <Typography variant="h6" component="h6" sx={{ color: '#ddd' }}>No data available</Typography>;
@@ -198,31 +200,46 @@ const RadarChart = ({ data }) => {
   
       // Structure the data to match the API's expected input
       const requestData = { difficulties };
+
+      console.log("REQUESTED DATA: "+JSON.stringify(requestData));
   
       // Make an API call to save the updated data
       await saveUpdatedData(requestData);
   
       console.log('Applied changes and saved to DB:', requestData);
+
+      // Show success message in the Snackbar
+      setSnackbarMessage('Changes applied successfully!');
+      setSnackbarOpen(true);
   
       // Optionally, update the UI or state after saving
       setOpenPopup(false);
       setPopupData(null);
     } catch (error) {
       console.error('Error saving data:', error);
+      // Show error message in the Snackbar
+      setSnackbarMessage('Error saving changes. Please try again.');
+      setSnackbarOpen(true);
     }
   };
   
   // Function to save the updated data to the backend
   const saveUpdatedData = async (requestData) => {
     try {
-      const response = await axios.post('/save-difficulties', requestData);
+      const response = await axios.post('https://gala24demo-api-production.up.railway.app/save-difficulties', requestData);
       console.log('Save response:', response.data);
     } catch (error) {
       console.error('Error in saving difficulties:', error);
       throw error; // Re-throw the error to be handled by handleApply
     }
   };
-  
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
+  };
 
   const handleClose = () => {
     setOpenPopup(false);
@@ -325,6 +342,18 @@ const RadarChart = ({ data }) => {
           </Paper>
         </Fade>
       </Modal>
+
+      {/* Snackbar for displaying messages */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Paper>
   );
 };
