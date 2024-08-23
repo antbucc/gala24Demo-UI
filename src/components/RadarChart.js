@@ -191,15 +191,18 @@ const RadarChart = ({ data }) => {
   const handleApply = async () => {
     try {
       // Collect the updated data to be sent to the API
-      const updatedData = popupData.studentsWithDiagnose.map(student => ({
+      const difficulties = popupData.studentsWithDiagnose.map(student => ({
         studentID: student.studentID,
         idealDifficulty: student.idealValue,
       }));
   
-      // Make an API call to save the updated data (array of difficulties)
-      await saveUpdatedData(updatedData);
+      // Structure the data to match the API's expected input
+      const requestData = { difficulties };
   
-      console.log('Applied changes and saved to DB:', updatedData);
+      // Make an API call to save the updated data
+      await saveUpdatedData(requestData);
+  
+      console.log('Applied changes and saved to DB:', requestData);
   
       // Optionally, update the UI or state after saving
       setOpenPopup(false);
@@ -210,9 +213,9 @@ const RadarChart = ({ data }) => {
   };
   
   // Function to save the updated data to the backend
-  const saveUpdatedData = async (difficultiesArray) => {
+  const saveUpdatedData = async (requestData) => {
     try {
-      const response = await axios.post('/save-difficulties', { difficulties: difficultiesArray });
+      const response = await axios.post('/save-difficulties', requestData);
       console.log('Save response:', response.data);
     } catch (error) {
       console.error('Error in saving difficulties:', error);
